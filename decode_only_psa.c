@@ -489,6 +489,9 @@ int two_step_sign_example()
     }
 
 
+#if 0
+
+
     /* ------   Initialize for signing    ------
      *
      * Set up the QCBOR encoding context with the output buffer. This
@@ -598,7 +601,7 @@ int two_step_sign_example()
 
     printf("\n");
 
-#if 0
+#endif
 
     /* ------   Set up for verification   ------
      *
@@ -638,7 +641,6 @@ int two_step_sign_example()
 
     print_useful_buf("Signed payload:\n", payload);
 
-#endif
     /* ------   Free key pair   ------
      *
      * Some implementations of PSA allocate slots for the keys in

@@ -42,12 +42,18 @@ function stringpermutations {
            # The set is empty, just output the new prefix
            echo "$newprefix"
         fi
-
-        #echo "set:" $set
-        #echo "pre:" $pre
     done
 }
 
+make -f tdv/Makefile.min clean
+make -f tdv/Makefile.min 
+tdv/sizes.sh encode_only_psa
+tdv/sizes.sh decode_only_psa
+
+make -f tdv/Makefile.max clean
+make -f tdv/Makefile.max 
+tdv/sizes.sh encode_only_ossl
+tdv/sizes.sh decode_only_ossl
 
 echo "===================================="
 

@@ -23,10 +23,10 @@
  * with crypto libraries works.
  */
 
-#include "t_cose_common.h"
-#include "t_cose_sign1_sign.h"
-#include "t_cose_sign1_verify.h"
-#include "q_useful_buf.h"
+#include "t_cose/t_cose_common.h"
+#include "t_cose/t_cose_sign1_sign.h"
+#include "t_cose/t_cose_sign1_verify.h"
+#include "t_cose/q_useful_buf.h"
 
 #include <stdio.h>
 
@@ -383,6 +383,7 @@ int32_t one_step_sign_example()
 
     printf("\n");
 
+
     /* ------   Set up for verification   ------
      *
      * Initialize the verification context.
@@ -476,6 +477,8 @@ int two_step_sign_example()
     if(return_value) {
         goto Done;
     }
+
+#if 0
 
 
     /* ------   Initialize for signing    ------
@@ -586,7 +589,7 @@ int two_step_sign_example()
 
 
     printf("\n");
-#if 0
+#endif
 
     /* ------   Set up for verification   ------
      *
@@ -626,7 +629,6 @@ int two_step_sign_example()
 
     print_useful_buf("Signed payload:\n", payload);
 
-#endif
 
     /* ------   Free key pair   ------
      *
