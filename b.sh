@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 
-# Copyright (c) 2020, Laurence Lundblade. All rights reserved.
+# Copyright (c) 2020,2022, Laurence Lundblade. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -9,9 +9,58 @@
 #
 
 
-# TODO: Add code size evaluations
-# TODO: add command line options to show more or show less output
+# ----- Calculate and display code size ------------------------------
 
+make -f tdv/Makefile.min clean
+make -f tdv/Makefile.min 
+tdv/sizes.sh encode_only_psa
+tdv/sizes.sh decode_only_psa
+
+make -f tdv/Makefile.max clean
+make -f tdv/Makefile.max 
+tdv/sizes.sh encode_only_ossl
+tdv/sizes.sh decode_only_ossl
+
+echo "===================================="
+
+
+# ----- Compile with strict warnings and for c++ ---------------------
+
+# The t_cose makefiles uses a minimum of compiler flags so that it will
+# work out-of-the-box with a wide variety of compilers. Here is where
+# compilation with a full set of warning flags is performed. This set
+# of flags has been thought through for gcc and clang/llvm and gives
+# the necessary coverage without being too idiosynchratic and strict.
+warn_flags="-Wall"
+warn_flags+=" -Wextra"
+warn_flags+=" -Wpedantic"
+warn_flags+=" -Wshadow"
+warn_flags+=" -Wconversion"
+warn_flags+=" -Wcast-qual"
+
+cpp_warn_flags="$warn_flags"
+cpp_warn_flags+=" -std=c++11"
+
+# Build for C++ 
+make -f tdv/Makefile.min clean > /dev/null
+make -f tdv/Makefile.min inc_all_psa "CMD_LINE=$warn_flags" "CXX_CMD_LINE=$cpp_warn_flags"
+make -f tdv/Makefile.max clean > /dev/null
+make -f tdv/Makefile.max inc_all_ossl "CMD_LINE=$warn_flags" "CXX_CMD_LINE=$cpp_warn_flags"
+
+# Add these after the C++ tests
+warn_flags+=" -std=c99"
+warn_flags+=" -xc"
+warn_flags+=" -Wstrict-prototypes"
+
+# Make once with the default compiler, llvm/clang on MacOS, and all
+# the warning flags set
+make -f Makefile.test clean > /dev/null
+make -f Makefile.test --silent "CMD_LINE=$warn_flags" 2>&1 | grep -v 'ar: creating'
+
+echo "===================================="
+
+
+# ----- Function for all #define permutations ------------------------
 
 function stringpermutations {
     local prefix=$1 # the prefix is the first argument
@@ -45,19 +94,14 @@ function stringpermutations {
     done
 }
 
-make -f tdv/Makefile.min clean
-make -f tdv/Makefile.min 
-tdv/sizes.sh encode_only_psa
-tdv/sizes.sh decode_only_psa
 
-make -f tdv/Makefile.max clean
-make -f tdv/Makefile.max 
-tdv/sizes.sh encode_only_ossl
-tdv/sizes.sh decode_only_ossl
+# ----- Compile and test all #define permutations --------------------
 
-echo "===================================="
+set="-DT_COSE_DISABLE_SHORT_CIRCUIT_SIGN"
+set+=" -DT_COSE_DISABLE_CONTENT_TYPE"
+set+=" -DT_COSE_DISABLE_ES512"
+set+=" -DT_COSE_DISABLE_ES384"
 
-set="-DT_COSE_DISABLE_SHORT_CIRCUIT_SIGN -DT_COSE_DISABLE_CONTENT_TYPE -DT_COSE_DISABLE_ES512 -DT_COSE_DISABLE_ES384"
 stringpermutations "" "$set" > /tmp/b.$$
 
 for target_crypto in test ossl psa; 

@@ -1,7 +1,7 @@
 /*
- * decode_only_psa.c, derived from t_cose_basic_example_psa.c
+ * inc_all_psa.cpp, derived from t_cose_basic_example_psa.c
  *
- * Copyright 2019-2022, Laurence Lundblade
+ * Copyright 2022, Laurence Lundblade
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *

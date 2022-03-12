@@ -1,7 +1,7 @@
 /*
- *  encode_only_ossl.c (derived from t_cose_basic_example_ossl.c)
+ *  inc_all_ossl.cpp
  *
- * Copyright 2019-2022, Laurence Lundblade
+ * Copyright 2022, Laurence Lundblade
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -27,6 +27,14 @@
 #include "t_cose/t_cose_sign1_sign.h"
 #include "t_cose/t_cose_sign1_verify.h"
 #include "t_cose/q_useful_buf.h"
+
+#include <stdio.h>
+
+#include "openssl/ecdsa.h"
+#include "openssl/obj_mac.h" /* for NID for EC curve */
+#include "openssl/err.h"
+
+
 
 #include <stdio.h>
 
@@ -217,7 +225,7 @@ Done:
  */
 void free_ossl_ecdsa_key_pair(struct t_cose_key key_pair)
 {
-    EC_KEY_free(key_pair.k.key_ptr);
+    EC_KEY_free((EC_KEY *)key_pair.k.key_ptr);
 }
 
 

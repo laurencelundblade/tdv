@@ -1,7 +1,7 @@
 /*
- *  t_cose_basic_example_psa.c
+ * encode_only_psa.c derived from t_cose_basic_example_psa.c
  *
- * Copyright 2019-2020, Laurence Lundblade
+ * Copyright 2019-2022, Laurence Lundblade
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -228,7 +228,8 @@ enum t_cose_err_t make_psa_ecdsa_key_pair(int32_t            cose_algorithm_id,
  */
 void free_psa_ecdsa_key_pair(struct t_cose_key key_pair)
 {
-    psa_close_key(key_pair.k.key_handle);
+    /* Cast is OK because this started out as a psa_key_handle_t */
+    psa_close_key((psa_key_handle_t)key_pair.k.key_handle);
 }
 
 
@@ -252,7 +253,7 @@ static void print_useful_buf(const char *string_label, struct q_useful_buf_c buf
 
     size_t i;
     for(i = 0; i < buf.len; i++) {
-        uint8_t Z = ((uint8_t *)buf.ptr)[i];
+        const uint8_t Z = ((const uint8_t *)buf.ptr)[i];
         printf("%02x ", Z);
         if((i % 8) == 7) {
             printf("\n    ");
@@ -262,191 +263,6 @@ static void print_useful_buf(const char *string_label, struct q_useful_buf_c buf
 
     fflush(stdout);
 }
-
-#if 0
-/**
- * \brief  Sign and verify example with one-step signing
- *
- * The one-step (plus init and key set up) signing uses more memory, but
- * is simpler to use. In the code below constructed_payload_buffer is
- * the extra buffer that two-step signing avoids.
- */
-int32_t one_step_sign_example()
-{
-
-    struct t_cose_sign1_sign_ctx   sign_ctx;
-    enum t_cose_err_t              return_value;
-    Q_USEFUL_BUF_MAKE_STACK_UB(    signed_cose_buffer, 300);
-    struct q_useful_buf_c          signed_cose;
-    Q_USEFUL_BUF_MAKE_STACK_UB(    constructed_payload_buffer, 300);
-    struct q_useful_buf_c          constructed_payload;
-    struct q_useful_buf_c          returned_payload;
-    struct t_cose_key              key_pair;
-    struct t_cose_sign1_verify_ctx verify_ctx;
-    QCBOREncodeContext             cbor_encode;
-    QCBORError                     qcbor_result;
-
-
-    /* ------   Construct the payload    ------
-     *
-     * The payload is constructed into its own continguous buffer.
-     * In this case the payload is CBOR formatm so it uses QCBOR to
-     * encode it, but CBOR is not
-     * required by COSE so it could be anything at all.
-     *
-     * The payload constructed here is a map of some label-value
-     * pairs similar to a CWT or EAT, but using string labels
-     * rather than integers. It is just a little example.
-     */
-    QCBOREncode_Init(&cbor_encode, constructed_payload_buffer);
-    QCBOREncode_OpenMap(&cbor_encode);
-    QCBOREncode_AddSZStringToMap(&cbor_encode, "BeingType", "Humanoid");
-    QCBOREncode_AddSZStringToMap(&cbor_encode, "Greeting", "We come in peace");
-    QCBOREncode_AddInt64ToMap(&cbor_encode, "ArmCount", 2);
-    QCBOREncode_AddInt64ToMap(&cbor_encode, "HeadCount", 1);
-    QCBOREncode_AddSZStringToMap(&cbor_encode, "BrainSize", "medium");
-    QCBOREncode_AddBoolToMap(&cbor_encode, "DrinksWater", true);
-    QCBOREncode_CloseMap(&cbor_encode);
-    qcbor_result = QCBOREncode_Finish(&cbor_encode, &constructed_payload);
-
-    printf("Encoded payload (size = %ld): %d (%s)\n",
-           constructed_payload.len,
-           qcbor_result,
-           qcbor_result ? "fail" : "success");
-    if(qcbor_result) {
-        return_value = (enum t_cose_err_t)qcbor_result;
-        goto Done;
-    }
-
-
-    /* ------   Make an ECDSA key pair    ------
-     *
-     * The key pair will be used for both signing and encryption. The
-     * data type is struct t_cose_key on the outside, but internally
-     * the format is that of the crypto library used, PSA in this
-     * case. They key is just passed through t_cose to the underlying
-     * crypto library.
-     *
-     * The making and destroying of the key pair is the only code
-     * dependent on the crypto library in this file.
-     */
-    return_value = make_psa_ecdsa_key_pair(T_COSE_ALGORITHM_ES256, &key_pair);
-
-    printf("Made EC key with curve prime256v1: %d (%s)\n", return_value, return_value ? "fail" : "success");
-    if(return_value) {
-        goto Done;
-    }
-
-
-    /* ------   Initialize for signing    ------
-     *
-     * Initialize the signing context by telling it the signing
-     * algorithm and signing options. No options are set here hence
-     * the 0 value.
-     *
-     * Set up the signing key and kid (key ID). No kid is passed here
-     * hence the NULL_Q_USEFUL_BUF_C.
-     */
-
-    t_cose_sign1_sign_init(&sign_ctx, 0, T_COSE_ALGORITHM_ES256);
-
-    t_cose_sign1_set_signing_key(&sign_ctx, key_pair,  NULL_Q_USEFUL_BUF_C);
-
-    printf("Initialized t_cose and configured signing key\n");
-
-
-    /* ------   Sign    ------
-     *
-     * This performs encoding of the headers, the signing and formatting
-     * in one shot.
-     *
-     * With this API the payload ends up in memory twice, once as the
-     * input and once in the output. If the payload is large, this
-     * needs about double the size of the payload to work.
-     */
-    return_value = t_cose_sign1_sign(/* The context set up with signing key */
-                                     &sign_ctx,
-                                     /* Pointer and length of payload to be
-                                      * signed.
-                                      */
-                                     constructed_payload,
-                                     /* Non-const pointer and length of the
-                                      * buffer where the completed output is
-                                      * written to. The length here is that
-                                      * of the whole buffer.
-                                      */
-                                     signed_cose_buffer,
-                                     /* Const pointer and actual length of
-                                      * the completed, signed and encoded
-                                      * COSE_Sign1 message. This points
-                                      * into the output buffer and has the
-                                      * lifetime of the output buffer.
-                                      */
-                                     &signed_cose);
-
-    printf("Finished signing: %d (%s)\n", return_value, return_value ? "fail" : "success");
-    if(return_value) {
-        goto Done;
-    }
-
-    print_useful_buf("Completed COSE_Sign1 message:\n", signed_cose);
-
-
-    printf("\n");
-
-
-    /* ------   Set up for verification   ------
-     *
-     * Initialize the verification context.
-     *
-     * The verification key works the same way as the signing
-     * key. Internally it must be in the format for the crypto library
-     * used. It is passed straight through t_cose.
-     */
-    t_cose_sign1_verify_init(&verify_ctx, 0);
-
-    t_cose_sign1_set_verification_key(&verify_ctx, key_pair);
-
-    printf("Initialized t_cose for verification and set verification key\n");
-
-
-    /* ------   Perform the verification   ------
-     *
-     * Verification is relatively simple. The COSE_Sign1 message to
-     * verify is passed in and the payload is returned if verification
-     * is successful.  The key must be of the correct type for the
-     * algorithm used to sign the COSE_Sign1.
-     *
-     * The COSE header parameters will be returned if requested, but
-     * in this example they are not as NULL is passed for the location
-     * to put them.
-     */
-    return_value = t_cose_sign1_verify(&verify_ctx,
-                                       signed_cose,         /* COSE to verify */
-                                       &returned_payload,  /* Payload from signed_cose */
-                                       NULL);      /* Don't return parameters */
-
-    printf("Verification complete: %d (%s)\n", return_value, return_value ? "fail" : "success");
-    if(return_value) {
-        goto Done;
-    }
-
-    print_useful_buf("Signed payload:\n", returned_payload);
-
-
-    /* ------   Free key pair   ------
-     *
-     * Some implementations of PSA allocate slots for the keys in
-     * use. This call indicates that the key slot can be de allocated.
-     */
-    printf("Freeing key pair\n\n\n");
-    free_psa_ecdsa_key_pair(key_pair);
-
-Done:
-    return return_value;
-}
-
-#endif
 
 
 /**
@@ -462,11 +278,9 @@ int two_step_sign_example()
     enum t_cose_err_t              return_value;
     Q_USEFUL_BUF_MAKE_STACK_UB(    signed_cose_buffer, 300);
     struct q_useful_buf_c          signed_cose;
-    struct q_useful_buf_c          payload;
     struct t_cose_key              key_pair;
     QCBOREncodeContext             cbor_encode;
     QCBORError                     cbor_error;
-    struct t_cose_sign1_verify_ctx verify_ctx;
 
 
 
@@ -598,47 +412,6 @@ int two_step_sign_example()
 
     printf("\n");
 
-#if 0
-
-    /* ------   Set up for verification   ------
-     *
-     * Initialize the verification context.
-     *
-     * The verification key works the same way as the signing
-     * key. Internally it must be in the format for the crypto library
-     * used. It is passed straight through t_cose.
-     */
-    t_cose_sign1_verify_init(&verify_ctx, 0);
-
-    t_cose_sign1_set_verification_key(&verify_ctx, key_pair);
-
-    printf("Initialized t_cose for verification and set verification key\n");
-
-
-    /* ------   Perform the verification   ------
-     *
-     * Verification is relatively simple. The COSE_Sign1 message to
-     * verify is passed in and the payload is returned if verification
-     * is successful.  The key must be of the correct type for the
-     * algorithm used to sign the COSE_Sign1.
-     *
-     * The COSE header parameters will be returned if requested, but
-     * in this example they are not as NULL is passed for the location
-     * to put them.
-     */
-    return_value = t_cose_sign1_verify(&verify_ctx,
-                                       signed_cose,         /* COSE to verify */
-                                       &payload,  /* Payload from signed_cose */
-                                       NULL);      /* Don't return parameters */
-
-    printf("Verification complete: %d (%s)\n", return_value, return_value ? "fail" : "success");
-    if(return_value) {
-        goto Done;
-    }
-
-    print_useful_buf("Signed payload:\n", payload);
-
-#endif
     /* ------   Free key pair   ------
      *
      * Some implementations of PSA allocate slots for the keys in
