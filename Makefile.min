@@ -1,7 +1,8 @@
 # Makefile -- UNIX-style make for t_cose using crypto with MBed Crypto
 # MBed Crypto uses the PSA Crypto interface
+# Modified for tests using tdv/b.sh script 
 #
-# Copyright (c) 2019-2020, Laurence Lundblade. All rights reserved.
+# Copyright (c) 2019-2022, Laurence Lundblade. All rights reserved.
 # Copyright (c) 2020, Michael Eckel, Fraunhofer SIT.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -51,7 +52,10 @@ CRYPTO_TEST_OBJ=test/t_cose_make_psa_test_key.o
 # Optimize for size
 C_OPTS=-Os -fPIC
 
-CC=/usr/local/bin/gcc-10
+# gcc makes smaller code (usually)
+CC=/usr/local/bin/gcc-11
+CXX=/usr/local/bin/g++-11
+
 
 # ---- T_COSE Config and test options ----
 TEST_CONFIG_OPTS=
@@ -61,8 +65,9 @@ C_DISABLE=-DT_COSE_DISABLE_SHORT_CIRCUIT_SIGN -DT_COSE_DISABLE_ES512 -DT_COSE_DI
 
 # ---- the main body that is invariant ----
 INC=-I inc -I test -I src
-ALL_INC=$(INC) $(CRYPTO_INC) $(QCBOR_INC)
+ALL_INC=$(INC) $(CRYPTO_INC) $(QCBOR_INC) 
 CFLAGS=$(CMD_LINE) $(ALL_INC) $(C_OPTS) $(TEST_CONFIG_OPTS) $(CRYPTO_CONFIG_OPTS) $(C_DISABLE)
+CXXFLAGS=$(CXX_CMD_LINE) $(ALL_INC) $(C_OPTS) $(TEST_CONFIG_OPTS) $(CRYPTO_CONFIG_OPTS) $(C_DISABLE)
 
 SRC_OBJ=src/t_cose_sign1_verify.o src/t_cose_sign1_sign.o src/t_cose_util.o src/t_cose_parameters.o
 
@@ -74,10 +79,13 @@ libt_cose.a: $(SRC_OBJ) $(CRYPTO_OBJ)
 	ar -r $@ $^
 
 encode_only_psa: tdv/encode_only_psa.o libt_cose.a
-	cc -dead_strip -o $@ $^ $(QCBOR_LIB) $(CRYPTO_LIB)
+	$(CC) -dead_strip -o $@ $^ $(QCBOR_LIB) $(CRYPTO_LIB) -L/usr/local/lib
 
 decode_only_psa: tdv/decode_only_psa.o libt_cose.a
-	cc -dead_strip -o $@ $^ $(QCBOR_LIB) $(CRYPTO_LIB)
+	$(CC) -dead_strip -o $@ $^ $(QCBOR_LIB) $(CRYPTO_LIB) -L/usr/local/lib
+
+inc_all_psa: tdv/inc_all_psa.o libt_cose.a
+	$(CXX) -dead_strip -o $@ $^ $(QCBOR_LIB) $(CRYPTO_LIB) -L/usr/local/lib
 
 
 
@@ -110,7 +118,7 @@ uninstall: libt_cose.a $(PUBLIC_INTERFACE)
 		libt_cose.a libt_cose.so libt_cose.so.1 libt_cose.so.1.0.0)
 
 clean:
-	rm -f $(SRC_OBJ) $(TEST_OBJ) $(CRYPTO_OBJ) t_cose_basic_example_psa t_cose_test libt_cose.a libt_cose.so main.o
+	rm -f $(SRC_OBJ) $(TEST_OBJ) $(CRYPTO_OBJ) t_cose_basic_example_psa t_cose_test libt_cose.a libt_cose.so main.o tdv/*.o
 
 
 # ---- public headers -----

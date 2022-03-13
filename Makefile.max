@@ -1,6 +1,7 @@
 # Makefile -- UNIX-style make for t_cose using OpenSSL crypto
+# Modified for tests using tdv/b.sh script
 #
-# Copyright (c) 2019-2020, Laurence Lundblade. All rights reserved.
+# Copyright (c) 2019-2022, Laurence Lundblade. All rights reserved.
 # Copyright (c) 2020, Michael Eckel, Fraunhofer SIT.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -59,6 +60,7 @@ TEST_OBJ=test/t_cose_test.o test/run_tests.o test/t_cose_sign_verify_test.o test
 INC=-I inc -I test -I src
 ALL_INC=$(INC) $(CRYPTO_INC) $(QCBOR_INC) 
 CFLAGS=$(CMD_LINE) $(ALL_INC) $(C_OPTS) $(TEST_CONFIG_OPTS) $(CRYPTO_CONFIG_OPTS)
+CXXFLAGS=$(CXX_CMD_LINE) $(ALL_INC) $(C_OPTS) $(TEST_CONFIG_OPTS) $(CRYPTO_CONFIG_OPTS)
 
 SRC_OBJ=src/t_cose_sign1_verify.o src/t_cose_sign1_sign.o src/t_cose_util.o src/t_cose_parameters.o
 
@@ -73,6 +75,9 @@ encode_only_ossl: tdv/encode_only_ossl.o libt_cose.a
 	cc -dead_strip -o $@ $^ $(QCBOR_LIB) $(CRYPTO_LIB)
 
 decode_only_ossl: tdv/decode_only_ossl.o libt_cose.a
+	cc -dead_strip -o $@ $^ $(QCBOR_LIB) $(CRYPTO_LIB)
+
+inc_all_ossl: tdv/inc_all_ossl.o libt_cose.a
 	cc -dead_strip -o $@ $^ $(QCBOR_LIB) $(CRYPTO_LIB)
 
 
