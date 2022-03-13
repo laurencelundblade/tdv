@@ -11,14 +11,18 @@
 
 # ----- Calculate and display code size ------------------------------
 
-make -f tdv/Makefile.min clean
-make -f tdv/Makefile.min 
+make -f tdv/Makefile.min clean > /dev/null
+make -f tdv/Makefile.min  > /dev/null
+echo " === Mininum Encode ==="
 tdv/sizes.sh encode_only_psa
+echo " === Mininum Decode ==="
 tdv/sizes.sh decode_only_psa
 
-make -f tdv/Makefile.max clean
-make -f tdv/Makefile.max 
+make -f tdv/Makefile.max clean > /dev/null
+make -f tdv/Makefile.max > /dev/null
+echo " === Maximum Encode ==="
 tdv/sizes.sh encode_only_ossl
+echo " === Maximum Decode ==="
 tdv/sizes.sh decode_only_ossl
 
 echo "===================================="
@@ -113,7 +117,7 @@ do
       make -f $m clean > /dev/null
       # Throw away stdout, but not stderr because that's were compiler warnings and erros show
       # All the extra error check options here so they are run before releases
-      make -f $m "CMD_LINE=$compile_options -Wall -pedantic-errors -Wextra -Wshadow -Wparentheses -Wconversion -xc -std=c99"   2>&1 >/dev/null | grep -v 'ar: creating'
+      make -f $m "CMD_LINE=$compile_options $warn_flags" 2>&1 >/dev/null | grep -v 'ar: creating'
       ./t_cose_test > /tmp/bb.$$
       grep SUMMARY /tmp/bb.$$
    done < /tmp/b.$$

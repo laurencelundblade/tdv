@@ -53,8 +53,8 @@ CRYPTO_TEST_OBJ=test/t_cose_make_psa_test_key.o
 C_OPTS=-Os -fPIC
 
 # gcc makes smaller code (usually)
-CC=/usr/local/bin/gcc-10
-CXX=/usr/local/bin/g++-10
+CC=/usr/local/bin/gcc-11
+CXX=/usr/local/bin/g++-11
 
 
 # ---- T_COSE Config and test options ----
@@ -85,7 +85,7 @@ decode_only_psa: tdv/decode_only_psa.o libt_cose.a
 	$(CC) -dead_strip -o $@ $^ $(QCBOR_LIB) $(CRYPTO_LIB) -L/usr/local/lib
 
 inc_all_psa: tdv/inc_all_psa.o libt_cose.a
-	$(CXX) -dead_strip -o $@ $^ $(QCBOR_LIB) $(CRYPTO_LIB)
+	$(CXX) -dead_strip -o $@ $^ $(QCBOR_LIB) $(CRYPTO_LIB) -L/usr/local/lib
 
 
 
