@@ -13,6 +13,8 @@
 #include "t_cose/t_cose_sign1_sign.h"
 #include "t_cose/t_cose_sign1_verify.h"
 #include "t_cose/q_useful_buf.h"
+#include "t_cose_standard_constants.h"
+
 
 #include "psa/crypto.h"
 
@@ -32,25 +34,6 @@
  * README for more details on how integration with crypto libraries
  * works.
  */
-
-
-/* Here's the auto-detect and manual override logic for managing PSA
- * Crypto API compatibility. It is needed here for key generation.
- *
- * PSA_GENERATOR_UNBRIDLED_CAPACITY happens to be defined in MBed
- * Crypto 1.1 and not in MBed Crypto 2.0 so it is what auto-detect
- * hinges off of.
- *
- * T_COSE_USE_PSA_CRYPTO_FROM_MBED_CRYPTO20 can be defined to force
- * setting to MBed Crypto 2.0
- *
- * T_COSE_USE_PSA_CRYPTO_FROM_MBED_CRYPTO11 can be defined to force
- * setting to MBed Crypt 1.1. It is also what the code below hinges
- * on.
- */
-#if defined(PSA_GENERATOR_UNBRIDLED_CAPACITY) && !defined(T_COSE_USE_PSA_CRYPTO_FROM_MBED_CRYPTO20)
-#define T_COSE_USE_PSA_CRYPTO_FROM_MBED_CRYPTO11
-#endif
 
 
 /*
@@ -88,45 +71,43 @@
 enum t_cose_err_t make_psa_ecdsa_key_pair(int32_t            cose_algorithm_id,
                                           struct t_cose_key *key_pair)
 {
-    psa_key_type_t      key_type;
-    psa_status_t        crypto_result;
-    psa_key_handle_t    key_handle;
-    psa_algorithm_t     key_alg;
-    const uint8_t      *private_key;
-    size_t              private_key_len;
+    psa_key_type_t        key_type;
+    psa_status_t          crypto_result;
+    mbedtls_svc_key_id_t  key_handle;
+    psa_algorithm_t       key_alg;
+    const uint8_t        *private_key;
+    size_t                private_key_len;
+    psa_key_attributes_t key_attributes;
+
 
     static const uint8_t private_key_256[] = {PRIVATE_KEY_prime256v1};
     static const uint8_t private_key_384[] = {PRIVATE_KEY_secp384r1};
     static const uint8_t private_key_521[] = {PRIVATE_KEY_secp521r1};
 
-    /* There is not a 1:1 mapping from alg to key type, but
+    /* There is not a 1:1 mapping from COSE algorithm to key type, but
      * there is usually an obvious curve for an algorithm. That
      * is what this does.
      */
 
-#ifdef T_COSE_USE_PSA_CRYPTO_FROM_MBED_CRYPTO11
-#define PSA_KEY_TYPE_ECC_KEY_PAIR PSA_KEY_TYPE_ECC_KEYPAIR
-#endif /* T_COSE_USE_PSA_CRYPTO_FROM_MBED_CRYPTO11 */
-
     switch(cose_algorithm_id) {
-    case T_COSE_ALGORITHM_ES256:
+    case COSE_ALGORITHM_ES256:
         private_key     = private_key_256;
         private_key_len = sizeof(private_key_256);
-        key_type        = PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_CURVE_SECP256R1);
+        key_type        = PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1);
         key_alg         = PSA_ALG_ECDSA(PSA_ALG_SHA_256);
         break;
 
-    case T_COSE_ALGORITHM_ES384:
+    case COSE_ALGORITHM_ES384:
         private_key     = private_key_384;
         private_key_len = sizeof(private_key_384);
-        key_type        = PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_CURVE_SECP384R1);
+        key_type        = PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1);
         key_alg         = PSA_ALG_ECDSA(PSA_ALG_SHA_384);
         break;
 
-    case T_COSE_ALGORITHM_ES512:
+    case COSE_ALGORITHM_ES512:
         private_key     = private_key_521;
         private_key_len = sizeof(private_key_521);
-        key_type        = PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_CURVE_SECP521R1);
+        key_type        = PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1);
         key_alg         = PSA_ALG_ECDSA(PSA_ALG_SHA_512);
         break;
 
@@ -153,45 +134,11 @@ enum t_cose_err_t make_psa_ecdsa_key_pair(int32_t            cose_algorithm_id,
      *
      * Second, you must say what algorithm(s) and operations the key
      * can be used as the PSA Crypto Library has policy enforcement.
-     *
-     * How this is done varies quite a lot in the newer
-     * PSA Crypto API compared to the older.
      */
-
-#ifdef T_COSE_USE_PSA_CRYPTO_FROM_MBED_CRYPTO11
-    /* Allocate for the key pair in the Crypto service */
-    crypto_result = psa_allocate_key(&key_handle);
-    if (crypto_result != PSA_SUCCESS) {
-        return T_COSE_ERR_FAIL;
-    }
-
-    /* Say what algorithm and operations the key can be used with / for */
-    psa_key_policy_t policy = psa_key_policy_init();
-    psa_key_policy_set_usage(&policy,
-                             PSA_KEY_USAGE_SIGN | PSA_KEY_USAGE_VERIFY,
-                             key_alg);
-    crypto_result = psa_set_key_policy(key_handle, &policy);
-    if (crypto_result != PSA_SUCCESS) {
-        return T_COSE_ERR_FAIL;
-    }
-
-    /* Import the private key. psa_import_key() automatically
-     * generates the public key from the private so no need to import
-     * more than the private key. (With ECDSA the public key is always
-     * deterministically derivable from the private key).
-     */
-    /* key_type has the type of key including the EC curve */
-    crypto_result = psa_import_key(key_handle,
-                                   key_type,
-                                   private_key,
-                                   private_key_len);
-
-#else /* T_COSE_USE_PSA_CRYPTO_FROM_MBED_CRYPTO11 */
-    psa_key_attributes_t key_attributes;
 
     key_attributes = psa_key_attributes_init();
 
-    /* Say what algorithm and operations the key can be used with / for */
+    /* Say what algorithm and operations the key can be used with/for */
     psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_SIGN_HASH | PSA_KEY_USAGE_VERIFY_HASH);
     psa_set_key_algorithm(&key_attributes, key_alg);
 
@@ -204,16 +151,21 @@ enum t_cose_err_t make_psa_ecdsa_key_pair(int32_t            cose_algorithm_id,
      * deterministically derivable from the private key).
      */
     crypto_result = psa_import_key(&key_attributes,
-                                   private_key,
-                                   private_key_len,
+                                    private_key,
+                                    private_key_len,
                                    &key_handle);
 
-#endif /* T_COSE_USE_PSA_CRYPTO_FROM_MBED_CRYPTO11 */
-
-    if (crypto_result != PSA_SUCCESS) {
+    if(crypto_result != PSA_SUCCESS) {
         return T_COSE_ERR_FAIL;
     }
 
+    /* This assignment relies on MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
+     * not being defined. If it is defined key_handle is a structure.
+     * This does not seem to be typically defined as it seems that is
+     * for a PSA implementation architecture as a service rather than
+     * an linked library. If it is defined, the structure will
+     * probably be less than 64 bits, so it can still fit in a
+     * t_cose_key. */
     key_pair->k.key_handle = key_handle;
     key_pair->crypto_lib   = T_COSE_CRYPTO_LIB_PSA;
 
@@ -228,7 +180,7 @@ enum t_cose_err_t make_psa_ecdsa_key_pair(int32_t            cose_algorithm_id,
  */
 void free_psa_ecdsa_key_pair(struct t_cose_key key_pair)
 {
-    psa_close_key((psa_key_handle_t)key_pair.k.key_handle);
+    psa_destroy_key((psa_key_handle_t)key_pair.k.key_handle);
 }
 
 
