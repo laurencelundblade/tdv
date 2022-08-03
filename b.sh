@@ -56,10 +56,15 @@ warn_flags+=" -std=c99"
 warn_flags+=" -xc"
 warn_flags+=" -Wstrict-prototypes"
 
-# Make once with the default compiler, llvm/clang on MacOS, and all
-# the warning flags set
+# Make once with gcc. The big fan out below uses the default compiler.
+# If gcc is not available, this check can be skipped. The default
+# compiler is used for the big fan out so it always works
 make -f Makefile.test clean > /dev/null
-make -f Makefile.test --silent "CMD_LINE=$warn_flags" 2>&1 | grep -v 'ar: creating'
+make -f Makefile.test "CMD_LINE=$warn_flags" "CC=/usr/local/bin/gcc-11" 2>&1 | grep -v 'ar: creating'
+make -f Makefile.ossl clean > /dev/null
+make -f Makefile.ossl "CMD_LINE=$warn_flags" "CC=/usr/local/bin/gcc-11" 2>&1 | grep -v 'ar: creating'
+make -f Makefile.psa clean > /dev/null
+make -f Makefile.psa "CMD_LINE=$warn_flags" "CC=/usr/local/bin/gcc-11" 2>&1 | grep -v 'ar: creating'
 
 echo "===================================="
 
