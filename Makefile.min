@@ -61,7 +61,7 @@ CXX=/usr/local/bin/g++-11
 TEST_CONFIG_OPTS=
 TEST_OBJ=test/t_cose_test.o test/run_tests.o test/t_cose_sign_verify_test.o test/t_cose_make_test_messages.o $(CRYPTO_TEST_OBJ)
 
-C_DISABLE=-DT_COSE_DISABLE_SHORT_CIRCUIT_SIGN -DT_COSE_DISABLE_ES512 -DT_COSE_DISABLE_ES384 -DT_COSE_DISABLE_CONTENT_TYPE
+C_DISABLE=-DT_COSE_DISABLE_SHORT_CIRCUIT_SIGN -DT_COSE_DISABLE_ES512 -DT_COSE_DISABLE_ES384 -DT_COSE_DISABLE_CONTENT_TYPE -DT_COSE_DISABLE_PS256 -DT_COSE_DISABLE_PS384 -DT_COSE_DISABLE_P512S -DT_COSE_DISABLE_EDDSA
 
 # ---- the main body that is invariant ----
 INC=-I inc -I test -I src
@@ -69,7 +69,7 @@ ALL_INC=$(INC) $(CRYPTO_INC) $(QCBOR_INC)
 CFLAGS=$(CMD_LINE) $(ALL_INC) $(C_OPTS) $(TEST_CONFIG_OPTS) $(CRYPTO_CONFIG_OPTS) $(C_DISABLE)
 CXXFLAGS=$(CXX_CMD_LINE) $(ALL_INC) $(C_OPTS) $(TEST_CONFIG_OPTS) $(CRYPTO_CONFIG_OPTS) $(C_DISABLE)
 
-SRC_OBJ=src/t_cose_sign1_verify.o src/t_cose_sign1_sign.o src/t_cose_util.o src/t_cose_parameters.o
+SRC_OBJ=src/t_cose_sign1_verify.o src/t_cose_sign1_sign.o src/t_cose_util.o src/t_cose_parameters.o src/t_cose_short_circuit.o
 
 .PHONY: all clean
 
