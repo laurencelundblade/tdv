@@ -110,6 +110,10 @@ set="-DT_COSE_DISABLE_SHORT_CIRCUIT_SIGN"
 set+=" -DT_COSE_DISABLE_CONTENT_TYPE"
 set+=" -DT_COSE_DISABLE_ES512"
 set+=" -DT_COSE_DISABLE_ES384"
+set+=" -DT_COSE_DISABLE_EDDSA"
+set+=" -DT_COSE_DISABLE_PS256"
+set+=" -DT_COSE_DISABLE_PS384"
+set+=" -DT_COSE_DISABLE_PS512"
 
 stringpermutations "" "$set" > /tmp/b.$$
 
