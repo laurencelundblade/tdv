@@ -10,6 +10,7 @@
 
 
 # ----- Calculate and display code size ------------------------------
+echo "============ sizes ========================"
 
 make -f tdv/Makefile.min clean > /dev/null
 make -f tdv/Makefile.min  > /dev/null
@@ -25,7 +26,8 @@ tdv/sizes.sh encode_only_ossl
 echo " === Maximum Decode ==="
 tdv/sizes.sh decode_only_ossl
 
-echo "===================================="
+echo
+echo "============ C++ ========================"
 
 
 # ----- Compile with strict warnings and for c++ ---------------------
@@ -51,6 +53,10 @@ make -f tdv/Makefile.min inc_all_psa "CMD_LINE=$warn_flags" "CXX_CMD_LINE=$cpp_w
 make -f tdv/Makefile.max clean > /dev/null
 make -f tdv/Makefile.max inc_all_ossl "CMD_LINE=$warn_flags" "CXX_CMD_LINE=$cpp_warn_flags"
 
+
+echo
+echo "============ strict compiler flags ========================"
+
 # Add these after the C++ tests
 warn_flags+=" -std=c99"
 warn_flags+=" -xc"
@@ -66,7 +72,8 @@ make -f Makefile.ossl "CMD_LINE=$warn_flags" "CC=/usr/local/bin/gcc-11" 2>&1 | g
 make -f Makefile.psa clean > /dev/null
 make -f Makefile.psa "CMD_LINE=$warn_flags" "CC=/usr/local/bin/gcc-11" 2>&1 | grep -v 'ar: creating'
 
-echo "===================================="
+echo
+echo "============== fan out ======================"
 
 
 # ----- Function for all #define permutations ------------------------
@@ -110,10 +117,7 @@ set="-DT_COSE_DISABLE_SHORT_CIRCUIT_SIGN"
 set+=" -DT_COSE_DISABLE_CONTENT_TYPE"
 set+=" -DT_COSE_DISABLE_ES512"
 set+=" -DT_COSE_DISABLE_ES384"
-set+=" -DT_COSE_DISABLE_EDDSA"
-set+=" -DT_COSE_DISABLE_PS256"
-set+=" -DT_COSE_DISABLE_PS384"
-set+=" -DT_COSE_DISABLE_PS512"
+set+=" -DT_COSE_DISABLE_MAC0"
 
 stringpermutations "" "$set" > /tmp/b.$$
 

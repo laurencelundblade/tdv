@@ -243,15 +243,18 @@ static void print_useful_buf(const char *string_label, struct q_useful_buf_c buf
  * constructed directly into the output buffer, uses less memory,
  * but is more complicated to use.
  */
-int two_step_sign_example()
+int two_step_sign_example_new(void)
 {
-    struct t_cose_sign1_sign_ctx   sign_ctx;
+    struct t_cose_sign_sign_ctx    sign_ctx;
+    struct t_cose_signature_sign_ecdsa ecdsa_signer;
     enum t_cose_err_t              return_value;
     Q_USEFUL_BUF_MAKE_STACK_UB(    signed_cose_buffer, 300);
     struct q_useful_buf_c          signed_cose;
+    struct q_useful_buf_c          payload;
     struct t_cose_key              key_pair;
     QCBOREncodeContext             cbor_encode;
     QCBORError                     cbor_error;
+    struct t_cose_sign1_verify_ctx verify_ctx;
 
 
 
@@ -294,9 +297,13 @@ int two_step_sign_example()
 
     QCBOREncode_Init(&cbor_encode, signed_cose_buffer);
 
-    t_cose_sign1_sign_init(&sign_ctx, 0, T_COSE_ALGORITHM_ES256);
+    t_cose_sign_sign_init(&sign_ctx, T_COSE_OPT_MESSAGE_TYPE_SIGN1);
 
-    t_cose_sign1_set_signing_key(&sign_ctx, key_pair,  NULL_Q_USEFUL_BUF_C);
+    t_cose_signature_sign_ecdsa_init(&ecdsa_signer, T_COSE_ALGORITHM_ES256);
+
+    t_cose_signature_sign_ecdsa_set_signing_key(&ecdsa_signer, key_pair, NULL_Q_USEFUL_BUF_C);
+
+    t_cose_sign_add_signer(&sign_ctx, t_cose_signature_sign_from_ecdsa(&ecdsa_signer));
 
     printf("Initialized QCBOR, t_cose and configured signing key\n");
 
@@ -306,7 +313,7 @@ int two_step_sign_example()
      * This just outputs the COSE_Sign1 header parameters and gets set
      * up for the payload to be output.
      */
-    return_value = t_cose_sign1_encode_parameters(&sign_ctx, &cbor_encode);
+    return_value = t_cose_sign_encode_start(&sign_ctx, false, &cbor_encode);
 
     printf("Encoded COSE headers: %d (%s)\n", return_value, return_value ? "fail" : "success");
     if(return_value) {
@@ -355,7 +362,10 @@ int two_step_sign_example()
      * This call signals the end payload construction, causes the actual
      * signing to run.
      */
-    return_value = t_cose_sign1_encode_signature(&sign_ctx, &cbor_encode);
+    return_value = t_cose_sign_encode_finish(&sign_ctx,
+                                             NULL_Q_USEFUL_BUF_C,
+                                             NULL_Q_USEFUL_BUF_C,
+                                             &cbor_encode);
 
     printf("Fnished signing: %d (%s)\n", return_value, return_value ? "fail" : "success");
     if(return_value) {
@@ -380,20 +390,10 @@ int two_step_sign_example()
 
     print_useful_buf("Completed COSE_Sign1 message:\n", signed_cose);
 
-
-    printf("\n");
-
-    /* ------   Free key pair   ------
-     *
-     * Some implementations of PSA allocate slots for the keys in
-     * use. This call indicates that the key slot can be de allocated.
-     */
-    printf("Freeing key pair\n\n\n");
-    free_psa_ecdsa_key_pair(key_pair);
-
 Done:
-    return return_value;
+    printf("\n");
 }
+
 
 int main(int argc, const char * argv[])
 {
@@ -401,5 +401,5 @@ int main(int argc, const char * argv[])
     (void)argv;
 
     //one_step_sign_example();
-    two_step_sign_example();
+    two_step_sign_example_new();
 }

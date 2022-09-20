@@ -230,7 +230,7 @@ int two_step_sign_example()
     struct q_useful_buf_c          signed_cose;
     struct q_useful_buf_c          payload;
     struct t_cose_key              key_pair;
-    struct t_cose_sign1_verify_ctx verify_ctx;
+    struct t_cose_sign_verify_ctx  verify_ctx;
 
 
 
@@ -254,50 +254,56 @@ int two_step_sign_example()
 
 
     /* ------   Set up for verification   ------
-     *
-     * Initialize the verification context.
-     *
-     * The verification key works the same way as the signing
-     * key. Internally it must be in the format for the crypto library
-     * used. It is passed straight through t_cose.
-     */
-    t_cose_sign1_verify_init(&verify_ctx, 0);
+      *
+      * Initialize the verification context.
+      *
+      * The verification key works the same way as the signing
+      * key. Internally it must be in the format for the crypto library
+      * used. It is passed straight through t_cose.
+      */
+     t_cose_sign_verify_init(&verify_ctx, T_COSE_OPT_MESSAGE_TYPE_SIGN1);
 
-    t_cose_sign1_set_verification_key(&verify_ctx, key_pair);
+     struct t_cose_signature_verify_ecdsa verifier;
+     t_cose_signature_verify_ecdsa_init(&verifier);
+     t_cose_signature_verify_ecdsa_set_key(&verifier, key_pair);
 
-    printf("Initialized t_cose for verification and set verification key\n");
+     t_cose_sign_add_verifier(&verify_ctx, t_cose_signature_verify_from_ecdsa(&verifier));
+
+     printf("Initialized t_cose for verification and set verification key\n");
 
 
-    /* ------   Perform the verification   ------
-     *
-     * Verification is relatively simple. The COSE_Sign1 message to
-     * verify is passed in and the payload is returned if verification
-     * is successful.  The key must be of the correct type for the
-     * algorithm used to sign the COSE_Sign1.
-     *
-     * The COSE header parameters will be returned if requested, but
-     * in this example they are not as NULL is passed for the location
-     * to put them.
-     */
-    return_value = t_cose_sign1_verify(&verify_ctx,
-                                       signed_cose,         /* COSE to verify */
-                                       &payload,  /* Payload from signed_cose */
-                                       NULL);      /* Don't return parameters */
+     /* ------   Perform the verification   ------
+      *
+      * Verification is relatively simple. The COSE_Sign1 message to
+      * verify is passed in and the payload is returned if verification
+      * is successful.  The key must be of the correct type for the
+      * algorithm used to sign the COSE_Sign1.
+      *
+      * The COSE header parameters will be returned if requested, but
+      * in this example they are not as NULL is passed for the location
+      * to put them.
+      */
+     return_value = t_cose_sign_verify(&verify_ctx,
+                                        signed_cose,         /* COSE to verify */
+                                        NULL_Q_USEFUL_BUF_C,
+                                        &payload,  /* Payload from signed_cose */
+                                        NULL);      /* Don't return parameters */
 
-    printf("Verification complete: %d (%s)\n", return_value, return_value ? "fail" : "success");
-    if(return_value) {
-        goto Done;
-    }
+     printf("Verification complete: %d (%s)\n", return_value, return_value ? "fail" : "success");
+     if(return_value) {
+         goto Done;
+     }
 
-    print_useful_buf("Signed payload:\n", payload);
+     print_useful_buf("Signed payload:\n", payload);
 
-    /* ------   Free key pair   ------
-     *
-     * Some implementations of PSA allocate slots for the keys in
-     * use. This call indicates that the key slot can be de allocated.
-     */
-    printf("Freeing key pair\n\n\n");
-    free_psa_ecdsa_key_pair(key_pair);
+
+     /* ------   Free key pair   ------
+      *
+      * Some implementations of PSA allocate slots for the keys in
+      * use. This call indicates that the key slot can be de allocated.
+      */
+     printf("Freeing key pair\n\n\n");
+     free_psa_ecdsa_key_pair(key_pair);
 
 Done:
     return return_value;
