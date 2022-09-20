@@ -247,7 +247,7 @@ static void print_useful_buf(const char *string_label, struct q_useful_buf_c buf
 int two_step_sign_example()
 {
     enum t_cose_err_t              return_value;
-    struct q_useful_buf_c          signed_cose;
+    struct q_useful_buf_c          signed_cose = NULL_Q_USEFUL_BUF_C;
     struct q_useful_buf_c          payload;
     struct t_cose_key              key_pair;
     struct t_cose_sign1_verify_ctx verify_ctx;
