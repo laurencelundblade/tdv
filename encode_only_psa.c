@@ -13,7 +13,7 @@
 #include "t_cose/t_cose_sign1_sign.h"
 #include "t_cose/t_cose_sign1_verify.h"
 #include "t_cose/q_useful_buf.h"
-#include "t_cose_standard_constants.h"
+#include "t_cose/t_cose_standard_constants.h"
 
 
 #include "psa/crypto.h"
@@ -109,21 +109,21 @@ enum t_cose_err_t make_psa_ecdsa_key_pair(int32_t            cose_algorithm_id,
      */
 
     switch(cose_algorithm_id) {
-    case COSE_ALGORITHM_ES256:
+    case T_COSE_ALGORITHM_ES256:
         private_key     = private_key_256;
         private_key_len = sizeof(private_key_256);
         key_type        = PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1);
         key_alg         = PSA_ALG_ECDSA(PSA_ALG_SHA_256);
         break;
 
-    case COSE_ALGORITHM_ES384:
+    case T_COSE_ALGORITHM_ES384:
         private_key     = private_key_384;
         private_key_len = sizeof(private_key_384);
         key_type        = PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1);
         key_alg         = PSA_ALG_ECDSA(PSA_ALG_SHA_384);
         break;
 
-    case COSE_ALGORITHM_ES512:
+    case T_COSE_ALGORITHM_ES512:
         private_key     = private_key_521;
         private_key_len = sizeof(private_key_521);
         key_type        = PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1);
@@ -246,7 +246,7 @@ static void print_useful_buf(const char *string_label, struct q_useful_buf_c buf
 int two_step_sign_example_new(void)
 {
     struct t_cose_sign_sign_ctx    sign_ctx;
-    struct t_cose_signature_sign_ecdsa ecdsa_signer;
+    struct t_cose_signature_sign_main main_signer;
     enum t_cose_err_t              return_value;
     Q_USEFUL_BUF_MAKE_STACK_UB(    signed_cose_buffer, 300);
     struct q_useful_buf_c          signed_cose;
@@ -299,11 +299,11 @@ int two_step_sign_example_new(void)
 
     t_cose_sign_sign_init(&sign_ctx, T_COSE_OPT_MESSAGE_TYPE_SIGN1);
 
-    t_cose_signature_sign_ecdsa_init(&ecdsa_signer, T_COSE_ALGORITHM_ES256);
+    t_cose_signature_sign_main_init(&main_signer, T_COSE_ALGORITHM_ES256);
 
-    t_cose_signature_sign_ecdsa_set_signing_key(&ecdsa_signer, key_pair, NULL_Q_USEFUL_BUF_C);
+    t_cose_signature_sign_main_set_signing_key(&main_signer, key_pair, NULL_Q_USEFUL_BUF_C);
 
-    t_cose_sign_add_signer(&sign_ctx, t_cose_signature_sign_from_ecdsa(&ecdsa_signer));
+    t_cose_sign_add_signer(&sign_ctx, t_cose_signature_sign_from_main(&main_signer));
 
     printf("Initialized QCBOR, t_cose and configured signing key\n");
 
