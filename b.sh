@@ -12,19 +12,16 @@
 # ----- Calculate and display code size ------------------------------
 echo "============ sizes ========================"
 
-make -f tdv/Makefile.min clean > /dev/null
-make -f tdv/Makefile.min  > /dev/null
-echo " === Mininum Encode ==="
-tdv/sizes.sh encode_only_psa
-echo " === Mininum Decode ==="
-tdv/sizes.sh decode_only_psa
+echo "===== Min ======"
+make -f tdv/Makefile.min3 clean > /dev/null
+make -f tdv/Makefile.min3 > /dev/null
+tdv/sizes.sh t_cose_call_all
 
-make -f tdv/Makefile.max clean > /dev/null
-make -f tdv/Makefile.max > /dev/null
-echo " === Maximum Encode ==="
-tdv/sizes.sh encode_only_ossl
-echo " === Maximum Decode ==="
-tdv/sizes.sh decode_only_ossl
+echo "===== Max ======"
+make -f tdv/Makefile.min3 clean > /dev/null
+make -f tdv/Makefile.max3 > /dev/null
+tdv/sizes.sh t_cose_call_all
+
 
 echo
 echo "============ C++ ========================"

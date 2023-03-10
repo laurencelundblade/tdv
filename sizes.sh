@@ -1,6 +1,6 @@
 #!/bin/sh
 
-fun=`nm libt_cose.a | awk '/ [Tt] /{printf "%s|", $3 }'; echo xxxxxxxxxxxxxx`
+fun=`nm libt_cose.a | awk '/ [TtSs] /{printf "%s|", $3 }'; echo xxxxxxxxxxxxxx`
 
 nm -n -t d -U $1 |\
 grep ' [TtSs] ' |\
