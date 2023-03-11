@@ -53,9 +53,6 @@ CRYPTO_EXAMPLE_OBJ=examples/init_keys_psa.o
 # Optimize for size
 C_OPTS=-Os -fPIC
 
-# gcc makes smaller code (usually)
-CC=/usr/local/bin/gcc-11
-
 OTHER_OPTS=
 
 

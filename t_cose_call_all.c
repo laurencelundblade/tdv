@@ -76,6 +76,7 @@ void call_all_sign_verify(void)
 {
     struct t_cose_sign_verify_ctx me;
     enum t_cose_err_t             err;
+    void                        *p;
 
 
     t_cose_sign_verify_init(&me, 0);
@@ -100,7 +101,7 @@ void call_all_sign_verify(void)
                              NULL_Q_USEFUL_BUF_C,
                              NULL_Q_USEFUL_BUF_C,
                              NULL);
-    void *x = t_cose_sign_verify_get_last(&me);
+    p = t_cose_sign_verify_get_last(&me);
 #endif /* !T_COSE_MINIMUM */
 }
 
@@ -155,6 +156,7 @@ void call_all_sign1_verify(void)
     struct t_cose_key            key;
     size_t                       a_size;
     enum t_cose_err_t            err;
+    uint64_t                     cbor_tag;
 
 
     t_cose_sign1_verify_init(&me, 0);
@@ -178,7 +180,7 @@ void call_all_sign1_verify(void)
                                        NULL_Q_USEFUL_BUF_C,
                                        NULL);
 
-    uint64_t x = t_cose_sign1_get_nth_tag(&me, 0);
+    cbor_tag = t_cose_sign1_get_nth_tag(&me, 0);
 }
 #endif /* !T_COSE_MINIMUM */
 
@@ -527,6 +529,9 @@ void call_all_main(void)
 
 int main(int argc, const char * argv[])
 {
+    (void)argc;
+    (void)argv;
+
     call_all_main();
 }
 
