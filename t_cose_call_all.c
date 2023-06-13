@@ -61,7 +61,6 @@ void call_all_sign_sign(void)
 #endif /* !T_COSE_MINIMUM */
 
     err = t_cose_sign_encode_start(&context,
-                                   true,
                                    NULL);
     err = t_cose_sign_encode_finish(&context,
                                     NULL_Q_USEFUL_BUF_C,
@@ -84,9 +83,9 @@ void call_all_sign_verify(void)
 
 #ifndef T_COSE_MINIMUM
     t_cose_sign_add_param_storage(&me, NULL);
-    t_cose_sign_set_param_decoder(&me,
-                                  NULL,
-                                  NULL);
+    t_cose_sign_set_special_param_decoder(&me,
+                                          NULL,
+                                          NULL);
 #endif /* !T_COSE_MINIMUM */
 
     err = t_cose_sign_verify(&me,
@@ -219,7 +218,7 @@ void call_all_signature_verify_main(void)
     t_cose_signature_verify_main_set_key(&me, key, NULL_Q_USEFUL_BUF_C);
 #ifndef T_COSE_MINIMUM
     t_cose_signature_verify_main_set_crypto_context(&me, NULL);
-    t_cose_signature_verify_main_set_param_decoder(&me, NULL, NULL);
+    t_cose_signature_verify_main_set_special_param_decoder(&me, NULL, NULL);
 #endif /* !T_COSE_MINIMUM */
     p = t_cose_signature_verify_from_main(&me);
 }
@@ -256,7 +255,7 @@ void call_all_signature_verify_eddsa(void)
 
     t_cose_signature_verify_eddsa_init(&me, 0);
     t_cose_signature_verify_eddsa_set_key(&me, key, NULL_Q_USEFUL_BUF_C);
-    t_cose_signature_verify_eddsa_set_param_decoder(&me, NULL, NULL);
+    t_cose_signature_verify_eddsa_set_special_param_decoder(&me, NULL, NULL);
     t_cose_signature_verify_eddsa_set_auxiliary_buffer(&me, NULL_Q_USEFUL_BUF);
     n = t_cose_signature_verify_eddsa_auxiliary_buffer_size(&me);
     p = t_cose_signature_verify_from_eddsa(&me);
@@ -315,7 +314,8 @@ void call_all_mac_validate(void)
 #ifndef T_COSE_MINIMUM
     err = t_cose_mac_validate_detached(&me,
                                        NULL_Q_USEFUL_BUF_C,
-                                       NULL,
+                                       NULL_Q_USEFUL_BUF_C,
+                                       NULL_Q_USEFUL_BUF_C,
                                        NULL);
 #endif /* !T_COSE_MINIMUM */
 }
@@ -392,12 +392,14 @@ void call_all_encrypt_dec(void)
 }
 
 
-#include "t_cose/t_cose_recipient_enc_aes_kw.h"
+#include "t_cose/t_cose_recipient_enc_keywrap.h"
 
 void call_all_recipient_enc_keywrap(void)
 {
     struct t_cose_recipient_enc_keywrap me;
     struct t_cose_key                   key;
+    struct t_cose_alg_and_bits          ce_alg;
+    
 
     t_cose_recipient_enc_keywrap_init(&me, 0);
 
@@ -409,17 +411,22 @@ void call_all_recipient_enc_keywrap(void)
 
 
     // TODO: why isn't this linked by reference in init?
-    t_cose_recipient_create_keywrap_cb_private(NULL, NULL_Q_USEFUL_BUF_C, NULL);
+    t_cose_recipient_create_keywrap_cb_private(NULL,
+                                               NULL_Q_USEFUL_BUF_C,
+                                               ce_alg,
+                                               NULL);
 }
 
 
-#include "t_cose/t_cose_recipient_dec_aes_kw.h"
+#include "t_cose/t_cose_recipient_dec_keywrap.h"
 
 void call_all_recipient_dec_aes_kw(void)
 {
     struct t_cose_recipient_dec_keywrap me;
     struct t_cose_key                   key;
     struct t_cose_header_location       loc;
+    struct t_cose_alg_and_bits          ce_alg;
+
 
     t_cose_recipient_dec_keywrap_init(&me);
     t_cose_recipient_dec_keywrap_set_kek(&me, key, NULL_Q_USEFUL_BUF_C);
@@ -427,6 +434,7 @@ void call_all_recipient_dec_aes_kw(void)
     // TODO: why isn't this linked by reference in init?
     t_cose_recipient_dec_keywrap_cb_private(NULL,
                                             loc,
+                                            ce_alg,
                                             NULL,
                                             NULL_Q_USEFUL_BUF,
                                             NULL,
@@ -443,14 +451,19 @@ void call_all_recipient_enc_hpke(void)
 {
     struct t_cose_recipient_enc_hpke me;
     struct t_cose_key                key;
+    struct t_cose_alg_and_bits       ce_alg;
 
-    t_cose_recipient_enc_hpke_init(&me, 0);
+
+    t_cose_recipient_enc_hpke_init(&me, 0, 0, 0);
 
     t_cose_recipient_enc_hpke_set_key(&me, key, NULL_Q_USEFUL_BUF_C);
 
 
     // TODO: why isn't this linked by reference in init?
-    t_cose_recipient_create_hpke_cb_private(NULL, NULL_Q_USEFUL_BUF_C, NULL);
+    t_cose_recipient_create_hpke_cb_private(NULL,
+                                            NULL_Q_USEFUL_BUF_C,
+                                            ce_alg,
+                                            NULL);
 }
 
 
@@ -461,6 +474,8 @@ void call_all_recipient_dec_hpke(void)
     struct t_cose_recipient_dec_hpke    me;
     struct t_cose_key                   key;
     struct t_cose_header_location       loc;
+    struct t_cose_alg_and_bits          ce_alg;
+
 
     t_cose_recipient_dec_hpke_init(&me);
     t_cose_recipient_dec_hpke_set_skr(&me, key, NULL_Q_USEFUL_BUF_C);
@@ -468,6 +483,7 @@ void call_all_recipient_dec_hpke(void)
     // TODO: why isn't this linked by reference in init?
     t_cose_recipient_dec_hpke_cb_private(NULL,
                                          loc,
+                                         ce_alg,
                                          NULL,
                                          NULL_Q_USEFUL_BUF,
                                          NULL,
