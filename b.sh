@@ -8,23 +8,39 @@
 # See BSD-3-Clause license in README.md
 #
 
+GCC=/usr/local/bin/gcc-10
 
 # ----- Calculate and display code size ------------------------------
+
+# This compiles the library and links it against t_cose_call_all.c so
+# all t_cose code is linked. Then the size of each function and static
+# data is displayed along with a total.
+#
+# This is done for a minimum size where all T_COSE_DISABLEs are set.
+# The minimum uses gcc because it generally produces smaller code.
+# This is also done for a maximum size.
+#
+# There are improvements to be made here. This should run for all the
+# different crypto libraries because they produce different results
+# and because some libraries support things that others don't (e.g.,
+# EdDSA) and vice versa.
+#
+# It would also be nice to give a break down that separates signing,
+# encryption, mac and separates the creation from the decoding. For
+# example, sign encode, sign decode, sign encode and ecode.
+
 echo "============ sizes ========================"
 
-make -f tdv/Makefile.min clean > /dev/null
-make -f tdv/Makefile.min  > /dev/null
-echo " === Mininum Encode ==="
-tdv/sizes.sh encode_only_psa
-echo " === Mininum Decode ==="
-tdv/sizes.sh decode_only_psa
+echo "===== Min ======"
+make -f tdv/Makefile.min "CC=$GCC" clean > /dev/null
+make -f tdv/Makefile.min > /dev/null
+tdv/sizes.sh t_cose_call_all
 
-make -f tdv/Makefile.max clean > /dev/null
+echo "===== Max ======"
+make -f tdv/Makefile.min clean > /dev/null
 make -f tdv/Makefile.max > /dev/null
-echo " === Maximum Encode ==="
-tdv/sizes.sh encode_only_ossl
-echo " === Maximum Decode ==="
-tdv/sizes.sh decode_only_ossl
+tdv/sizes.sh t_cose_call_all
+
 
 echo
 echo "============ C++ ========================"
@@ -49,9 +65,9 @@ cpp_warn_flags+=" -std=c++11"
 
 # Build for C++ 
 make -f tdv/Makefile.min clean > /dev/null
-make -f tdv/Makefile.min inc_all_psa "CMD_LINE=$warn_flags" "CXX_CMD_LINE=$cpp_warn_flags"
-make -f tdv/Makefile.max clean > /dev/null
-make -f tdv/Makefile.max inc_all_ossl "CMD_LINE=$warn_flags" "CXX_CMD_LINE=$cpp_warn_flags"
+make -f tdv/Makefile.max t_cose_call_all_cpp "CMD_LINE=$warn_flags" "CXX_CMD_LINE=$cpp_warn_flags"
+#make -f tdv/Makefile.max clean > /dev/null
+#make -f tdv/Makefile.max inc_all_ossl "CMD_LINE=$warn_flags" "CXX_CMD_LINE=$cpp_warn_flags"
 
 
 echo
@@ -66,11 +82,11 @@ warn_flags+=" -Wstrict-prototypes"
 # If gcc is not available, this check can be skipped. The default
 # compiler is used for the big fan out so it always works
 make -f Makefile.test clean > /dev/null
-make -f Makefile.test "CMD_LINE=$warn_flags" "CC=/usr/local/bin/gcc-11" 2>&1 | grep -v 'ar: creating'
+make -f Makefile.test "CMD_LINE=$warn_flags" "CC=$GCC" 2>&1 | grep -v 'ar: creating'
 make -f Makefile.ossl clean > /dev/null
-make -f Makefile.ossl "CMD_LINE=$warn_flags" "CC=/usr/local/bin/gcc-11" 2>&1 | grep -v 'ar: creating'
+make -f Makefile.ossl "CMD_LINE=$warn_flags" "CC=$GCC" 2>&1 | grep -v 'ar: creating'
 make -f Makefile.psa clean > /dev/null
-make -f Makefile.psa "CMD_LINE=$warn_flags" "CC=/usr/local/bin/gcc-11" 2>&1 | grep -v 'ar: creating'
+make -f Makefile.psa "CMD_LINE=$warn_flags" "CC=$GCC" 2>&1 | grep -v 'ar: creating'
 
 echo
 echo "============== fan out ======================"
@@ -117,7 +133,12 @@ set="-DT_COSE_DISABLE_SHORT_CIRCUIT_SIGN"
 set+=" -DT_COSE_DISABLE_CONTENT_TYPE"
 set+=" -DT_COSE_DISABLE_ES512"
 set+=" -DT_COSE_DISABLE_ES384"
-set+=" -DT_COSE_DISABLE_MAC0"
+set+=" -DT_COSE_DISABLE_COSE_SIGN"
+set+=" -DT_COSE_DISABLE_AES_KW"
+set+=" -DT_COSE_DISABLE_EDDSA"
+set+=" -DT_COSE_DISABLE_PS256"
+set+=" -DT_COSE_DISABLE_PS384"
+set+=" -DT_COSE_DISABLE_PS512"
 
 stringpermutations "" "$set" > /tmp/b.$$
 
