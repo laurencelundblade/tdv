@@ -8,7 +8,7 @@
 # See BSD-3-Clause license in README.md
 #
 
-GCC=/usr/local/bin/gcc-10
+GCC=/usr/local/bin/gcc-11
 
 # ----- Calculate and display code size ------------------------------
 

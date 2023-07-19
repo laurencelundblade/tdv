@@ -442,46 +442,44 @@ void call_all_recipient_dec_aes_kw(void)
                                             NULL);
 }
 
-#ifndef T_COSE_MINIMUM
-#ifndef T_COSE_DISABLE_HPKE
 
-#include "t_cose/t_cose_recipient_enc_hpke.h"
+#include "t_cose/t_cose_recipient_enc_esdh.h"
 
-void call_all_recipient_enc_hpke(void)
+void call_all_recipient_enc_esdh(void)
 {
-    struct t_cose_recipient_enc_hpke me;
+    struct t_cose_recipient_enc_esdh me;
     struct t_cose_key                key;
     struct t_cose_alg_and_bits       ce_alg;
 
 
-    t_cose_recipient_enc_hpke_init(&me, 0, 0, 0);
+    t_cose_recipient_enc_esdh_init(&me, 0, 0);
 
-    t_cose_recipient_enc_hpke_set_key(&me, key, NULL_Q_USEFUL_BUF_C);
+    t_cose_recipient_enc_esdh_set_key(&me, key, NULL_Q_USEFUL_BUF_C);
 
 
     // TODO: why isn't this linked by reference in init?
-    t_cose_recipient_create_hpke_cb_private(NULL,
+    t_cose_recipient_create_esdh_cb_private(NULL,
                                             NULL_Q_USEFUL_BUF_C,
                                             ce_alg,
                                             NULL);
 }
 
 
-#include "t_cose/t_cose_recipient_dec_hpke.h"
+#include "t_cose/t_cose_recipient_dec_esdh.h"
 
-void call_all_recipient_dec_hpke(void)
+void call_all_recipient_dec_esdh(void)
 {
-    struct t_cose_recipient_dec_hpke    me;
+    struct t_cose_recipient_dec_esdh    me;
     struct t_cose_key                   key;
     struct t_cose_header_location       loc;
     struct t_cose_alg_and_bits          ce_alg;
 
 
-    t_cose_recipient_dec_hpke_init(&me);
-    t_cose_recipient_dec_hpke_set_skr(&me, key, NULL_Q_USEFUL_BUF_C);
+    t_cose_recipient_dec_esdh_init(&me);
+    t_cose_recipient_dec_esdh_set_key(&me, key, NULL_Q_USEFUL_BUF_C);
 
     // TODO: why isn't this linked by reference in init?
-    t_cose_recipient_dec_hpke_cb_private(NULL,
+    t_cose_recipient_dec_esdh_cb_private(NULL,
                                          loc,
                                          ce_alg,
                                          NULL,
@@ -491,8 +489,6 @@ void call_all_recipient_dec_hpke(void)
                                          NULL);
 }
 
-#endif /* !T_COSE_DISABLE_HPKE */
-#endif /* !T_COSE_MINIMUM */
 
 
 
@@ -535,11 +531,9 @@ void call_all_main(void)
 
     call_all_recipient_dec_aes_kw();
 
-#ifndef T_COSE_DISABLE_HPKE
-    call_all_recipient_enc_hpke();
+    call_all_recipient_enc_esdh();
 
-    call_all_recipient_dec_hpke();
-#endif /* ! T_COSE_DISABLE_HPKE */
+    call_all_recipient_dec_esdh();
 
 }
 
